@@ -302,9 +302,8 @@
       );
       const criteriaBreakdown = document.getElementById("criteria-breakdown");
 
-      // --- IMPROVEMENT: API Key Management ---
-      // Replace "YOUR_API_KEY_HERE" with your actual Google AI API key.
-      const API_KEY = "AIzaSyApADMJDVHZkO8ayQLNibjpIz3yoS7ym-0";
+      // API Key Management
+      const API_KEY = "AIzaSyApADMJDVHZkO8ayQLNibjpIz3yoS7ym-0"; // Replace with your actual key
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
       analyzeBtn.addEventListener("click", handleAnalysis);
@@ -334,13 +333,16 @@
             `;
 
           const fullPrompt = `${systemPrompt}\n\nUser Prompt to Evaluate:\n"${userPrompt}"`;
-
-          // --- FIX: Added generationConfig to ensure consistent, deterministic results ---
+          
+          // --- MODIFICATION: Implemented deterministic generation parameters ---
+          // The generationConfig is updated to ensure consistent and reproducible results.
           const payload = {
             contents: [{ parts: [{ text: fullPrompt }] }],
             generationConfig: {
-              temperature: 0, // Setting temperature to 0 removes randomness
-              responseMimeType: "application/json", // Ensures the model returns valid JSON
+              temperature: 0, // Set to 0 to eliminate randomness for deterministic output.
+              responseMimeType: "application/json", // Ensures the model returns valid JSON, simplifying parsing.
+              candidateCount: 1, // Requests a single response candidate for consistency.
+              maxOutputTokens: 2048, // Sets a reasonable limit on the response size to prevent overly long or truncated results.
             },
           };
 
@@ -358,7 +360,7 @@
           }
 
           const result = await response.json();
-          // --- IMPROVEMENT: No longer need to clean up the response string ---
+          // Because we use responseMimeType: "application/json", no manual cleanup is needed.
           const textResponse = result.candidates[0].content.parts[0].text;
           const data = JSON.parse(textResponse);
 
@@ -376,16 +378,14 @@
         for (let i = 0; i < retries; i++) {
           try {
             const response = await fetch(url, options);
-            return response; // If we get a response, even an error one, we return it to be handled.
+            return response;
           } catch (error) {
             lastError = error;
-            // Wait before retrying with exponential backoff
             await new Promise((resolve) =>
               setTimeout(resolve, delay * Math.pow(2, i))
             );
           }
         }
-        // If all retries fail, throw the last error caught.
         throw lastError;
       }
 
@@ -398,7 +398,7 @@
             data.evaluation.length
         );
         const grade = getLetterGrade(totalScore);
-        const circleCircumference = 2 * Math.PI * 45; // 2 * pi * r
+        const circleCircumference = 2 * Math.PI * 45;
         const strokeOffset =
           circleCircumference - (totalScore / 100) * circleCircumference;
 
