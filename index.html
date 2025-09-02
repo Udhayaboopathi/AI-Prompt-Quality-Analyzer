@@ -302,8 +302,8 @@
       );
       const criteriaBreakdown = document.getElementById("criteria-breakdown");
 
-      // API Key Management
-      const API_KEY = "AIzaSyApADMJDVHZkO8ayQLNibjpIz3yoS7ym-0"; // Replace with your actual key
+      // IMPORTANT: Replace with your actual Google AI API key
+      const API_KEY = "AIzaSyApADMJDVHZkO8ayQLNibjpIz3yoS7ym-0"; 
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
       analyzeBtn.addEventListener("click", handleAnalysis);
@@ -333,16 +333,23 @@
             `;
 
           const fullPrompt = `${systemPrompt}\n\nUser Prompt to Evaluate:\n"${userPrompt}"`;
-          
+
           // --- MODIFICATION: Implemented deterministic generation parameters ---
-          // The generationConfig is updated to ensure consistent and reproducible results.
+          // This configuration ensures consistent, reproducible results for the same input.
           const payload = {
             contents: [{ parts: [{ text: fullPrompt }] }],
             generationConfig: {
-              temperature: 0, // Set to 0 to eliminate randomness for deterministic output.
-              responseMimeType: "application/json", // Ensures the model returns valid JSON, simplifying parsing.
-              candidateCount: 1, // Requests a single response candidate for consistency.
-              maxOutputTokens: 2048, // Sets a reasonable limit on the response size to prevent overly long or truncated results.
+              // Set to 0 to eliminate randomness. This is the most important step for deterministic output.
+              temperature: 0,
+              // Request only one possible response from the model.
+              candidateCount: 1,
+              // Explicitly disable any default stop sequences.
+              stopSequences: [],
+              // Ensures the model returns valid JSON, which simplifies parsing and prevents errors.
+              // This makes manually removing "```json" fences unnecessary.
+              responseMimeType: "application/json",
+              // Sets a reasonable limit on the response size.
+              maxOutputTokens: 2048,
             },
           };
 
@@ -360,8 +367,9 @@
           }
 
           const result = await response.json();
-          // Because we use responseMimeType: "application/json", no manual cleanup is needed.
           const textResponse = result.candidates[0].content.parts[0].text;
+          
+          // The try-catch block handles any unexpected JSON parsing errors gracefully.
           const data = JSON.parse(textResponse);
 
           displayResults(data);
